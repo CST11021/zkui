@@ -48,6 +48,8 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         logger.debug("Starting ZKUI!");
+
+        // 加载config.cfg配置文件
         Properties globalProps = new Properties();
         File f = new File("config.cfg");
         if (f.exists()) {
@@ -60,33 +62,30 @@ public class Main {
         globalProps.setProperty("uptime", new Date().toString());
         new Dao(globalProps).checkNCreate();
 
-        String webFolder = "webapp";
+
+        // Jetty服务
         Server server = new Server();
 
-        WebAppContext servletContextHandler = new WebAppContext();
-        servletContextHandler.setContextPath("/");
-        servletContextHandler.setResourceBase("src/main/resources/" + webFolder);
-        ClassList clist = ClassList.setServerDefault(server);
-        clist.addBefore(JettyWebXmlConfiguration.class.getName(), AnnotationConfiguration.class.getName());
-        servletContextHandler.setAttribute("org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern", ".*(/target/classes/|.*.jar)");
-        servletContextHandler.setParentLoaderPriority(true);
-        servletContextHandler.setInitParameter("useFileMappedBuffer", "false");
-        servletContextHandler.setAttribute("globalProps", globalProps);
+        // 表示web资源目录
+        String webFolder = "webapp";
 
-        ResourceHandler staticResourceHandler = new ResourceHandler();
-        staticResourceHandler.setDirectoriesListed(false);
-        Resource staticResources = Resource.newClassPathResource(webFolder);
-        staticResourceHandler.setBaseResource(staticResources);
-        staticResourceHandler.setWelcomeFiles(new String[]{"html/index.html"});
+        // 创建Web应用上下文
+        WebAppContext servletContextHandler = createWebAppContext(server, globalProps, webFolder);
+
+        // 静态资源处理器
+        ResourceHandler staticResourceHandler = createResourceHandler(webFolder);
 
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[]{staticResourceHandler, servletContextHandler});
 
         server.setHandler(handlers);
+
+
         HttpConfiguration http_config = new HttpConfiguration();
         http_config.setSecureScheme("https");
         http_config.setSecurePort(Integer.parseInt(globalProps.getProperty("serverPort")));
-        
+
+        // 关于https和http协议的配置
         if (globalProps.getProperty("https").equals("true")) {
             File keystoreFile = new File(globalProps.getProperty("keystoreFile"));
             SslContextFactory sslContextFactory = new SslContextFactory();
@@ -110,6 +109,29 @@ public class Main {
 
         server.start();
         server.join();
+    }
+
+    private static WebAppContext createWebAppContext(Server server, Properties globalProps, String webFolder) {
+        WebAppContext servletContextHandler = new WebAppContext();
+        servletContextHandler.setContextPath("/");
+        servletContextHandler.setResourceBase("src/main/resources/" + webFolder);
+        ClassList clist = ClassList.setServerDefault(server);
+        clist.addBefore(JettyWebXmlConfiguration.class.getName(), AnnotationConfiguration.class.getName());
+        servletContextHandler.setAttribute("org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern", ".*(/target/classes/|.*.jar)");
+        servletContextHandler.setParentLoaderPriority(true);
+        servletContextHandler.setInitParameter("useFileMappedBuffer", "false");
+        servletContextHandler.setAttribute("globalProps", globalProps);
+
+        return servletContextHandler;
+    }
+
+    private static ResourceHandler createResourceHandler(String webFolder) {
+        ResourceHandler staticResourceHandler = new ResourceHandler();
+        staticResourceHandler.setDirectoriesListed(false);
+        Resource staticResources = Resource.newClassPathResource(webFolder);
+        staticResourceHandler.setBaseResource(staticResources);
+        staticResourceHandler.setWelcomeFiles(new String[]{"html/index.html"});
+        return staticResourceHandler;
     }
 
 }

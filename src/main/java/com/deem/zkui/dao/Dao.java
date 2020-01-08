@@ -27,9 +27,14 @@ import org.javalite.activejdbc.Base;
 import org.slf4j.LoggerFactory;
 
 public class Dao {
+
+    private final static org.slf4j.Logger logger = LoggerFactory.getLogger(Dao.class);
     
     private final static Integer FETCH_LIMIT = 50;
-    private final static org.slf4j.Logger logger = LoggerFactory.getLogger(Dao.class);
+
+    /**
+     * zkui全局的配置
+     */
     private final Properties globalProps;
     
     public Dao(Properties globalProps) {
@@ -37,18 +42,29 @@ public class Dao {
     }
     
     public void open() {
-        Base.open(globalProps.getProperty("jdbcClass"), globalProps.getProperty("jdbcUrl"), globalProps.getProperty("jdbcUser"), globalProps.getProperty("jdbcPwd"));
+        Base.open(
+                globalProps.getProperty("jdbcClass"),
+                globalProps.getProperty("jdbcUrl"),
+                globalProps.getProperty("jdbcUser"),
+                globalProps.getProperty("jdbcPwd")
+        );
     }
     
     public void close() {
         Base.close();
     }
-    
+
+    /**
+     * 服务启动的时候调用该方法，设置数据源，并且在开发环境的时候清除数据库
+     */
     public void checkNCreate() {
         try {
             Flyway flyway = new Flyway();
-            flyway.setDataSource(globalProps.getProperty("jdbcUrl"), globalProps.getProperty("jdbcUser"), globalProps.getProperty("jdbcPwd"));
-            //Will wipe db each time. Avoid this in prod.
+            flyway.setDataSource(
+                    globalProps.getProperty("jdbcUrl"),
+                    globalProps.getProperty("jdbcUser"),
+                    globalProps.getProperty("jdbcPwd"));
+            //开发环境每次都清除数据库
             if (globalProps.getProperty("env").equals("dev")) {
                 flyway.clean();
             }
@@ -59,7 +75,12 @@ public class Dao {
         }
         
     }
-    
+
+    /**
+     * 获取历史数据
+     *
+     * @return
+     */
     public List<History> fetchHistoryRecords() {
         this.open();
         List<History> history = History.findAll().orderBy("ID desc").limit(FETCH_LIMIT);

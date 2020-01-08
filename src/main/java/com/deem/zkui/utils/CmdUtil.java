@@ -25,11 +25,27 @@ import java.io.PrintWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Cmd命令工具
+ */
 public enum CmdUtil {
 
+    /**
+     * 表示工具实例
+     */
     INSTANCE;
+
     private final static Logger logger = LoggerFactory.getLogger(CmdUtil.class);
 
+    /**
+     * 执行 cmd命令
+     *
+     * @param cmd       cmd命令
+     * @param zkServer  执行的服务器，IP或者域名
+     * @param zkPort    服务服务器端口号
+     * @return
+     * @throws IOException
+     */
     public String executeCmd(String cmd, String zkServer, String zkPort) throws IOException {
         StringBuilder sb;
         try (Socket s = new Socket(zkServer, Integer.parseInt(zkPort)); PrintWriter out = new PrintWriter(s.getOutputStream(), true); BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()))) {

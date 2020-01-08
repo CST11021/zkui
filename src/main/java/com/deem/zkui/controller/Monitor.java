@@ -55,6 +55,8 @@ public class Monitor extends HttpServlet {
                 stats.append(CmdUtil.INSTANCE.executeCmd("stat", monitorZKServer[0], monitorZKServer[1]));
                 stats.append(CmdUtil.INSTANCE.executeCmd("envi", monitorZKServer[0], monitorZKServer[1]));
             }
+
+            // 渲染freemarker模板
             templateParam.put("stats", stats);
             ServletUtil.INSTANCE.renderHtml(request, response, templateParam, "monitor.ftl.html");
 

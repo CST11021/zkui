@@ -25,16 +25,29 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 监听Session事件
+ */
 @WebListener
 public class SessionListener implements HttpSessionListener {
 
     private static final Logger logger = LoggerFactory.getLogger(SessionListener.class);
 
+    /**
+     * 监听Session创建事件
+     *
+     * @param event
+     */
     @Override
     public void sessionCreated(HttpSessionEvent event) {
         logger.trace("Session created");
     }
 
+    /**
+     * 监听Session销毁事件，session销毁时，关闭zk客户端
+     *
+     * @param event
+     */
     @Override
     public void sessionDestroyed(HttpSessionEvent event) {
         try {

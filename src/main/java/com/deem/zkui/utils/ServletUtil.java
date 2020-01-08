@@ -36,9 +36,23 @@ import org.slf4j.LoggerFactory;
 
 public enum ServletUtil {
 
+    /**
+     * 工具实例
+     */
     INSTANCE;
+
     private final static Logger logger = LoggerFactory.getLogger(ServletUtil.class);
 
+    /**
+     * 渲染html页面
+     *
+     * @param request
+     * @param response
+     * @param templateParam
+     * @param view
+     * @throws IOException
+     * @throws TemplateException
+     */
     public void renderHtml(HttpServletRequest request, HttpServletResponse response, Map<String, Object> templateParam, String view) throws IOException, TemplateException {
 
         if (request != null && response != null && templateParam != null) {
@@ -128,6 +142,13 @@ public enum ServletUtil {
     }
 
     //Using X-Forwarded-For to capture IP addresses coming via load balancer.
+
+    /**
+     * 使用X-Forwarded-For通过负载均衡来捕获IP地址
+     *
+     * @param request
+     * @return
+     */
     public String getRemoteAddr(HttpServletRequest request) {
         String remoteAddr = request.getHeader("X-Forwarded-For");
         if (remoteAddr == null) {

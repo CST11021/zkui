@@ -36,6 +36,14 @@ public class Logout extends HttpServlet {
 
     private final static Logger logger = LoggerFactory.getLogger(Logout.class);
 
+    /**
+     * 退出登录，然后关闭zk客户端的连接
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
@@ -44,7 +52,9 @@ public class Logout extends HttpServlet {
             String zkServer = globalProps.getProperty("zkServer");
             String[] zkServerLst = zkServer.split(",");
             ZooKeeper zk = ServletUtil.INSTANCE.getZookeeper(request, response, zkServerLst[0],globalProps);
+            // 设置Session为失效
             request.getSession().invalidate();
+            // 关闭zk
             zk.close();
             response.sendRedirect("/login");
         } catch (InterruptedException ex) {

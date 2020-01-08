@@ -30,6 +30,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+/**
+ * 拦截器，用于当Session过期时，会跳转登录页
+ */
 @WebFilter(filterName = "filteranno", urlPatterns = "/*")
 public class AuthFilter implements Filter {
 

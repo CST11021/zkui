@@ -42,12 +42,26 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.LoggerFactory;
 
+/**
+ * zk工具类
+ */
 public enum ZooKeeperUtil {
 
+    /**
+     * 工具类实例
+     */
     INSTANCE;
+
+    /**
+     * zk客户端连接服务端时，如果连接失败，尝试重新连接的次数
+     */
     public final static Integer MAX_CONNECT_ATTEMPT = 5;
     public final static String ZK_ROOT_NODE = "/";
-    public final static String ZK_SYSTEM_NODE = "zookeeper"; // ZK internal folder (quota info, etc) - have to stay away from it
+
+    /**
+     * ZK internal folder (quota info, etc) - have to stay away from it
+     */
+    public final static String ZK_SYSTEM_NODE = "zookeeper";
     public final static String ZK_HOSTS = "/appconfig/hosts";
     public final static String ROLE_USER = "USER";
     public final static String ROLE_ADMIN = "ADMIN";
@@ -55,6 +69,14 @@ public enum ZooKeeperUtil {
 
     private final static org.slf4j.Logger logger = LoggerFactory.getLogger(ZooKeeperUtil.class);
 
+    /**
+     *
+     * @param url
+     * @param zkSessionTimeout
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public ZooKeeper createZKConnection(String url, Integer zkSessionTimeout) throws IOException, InterruptedException {
         Integer connectAttempt = 0;
         ZooKeeper zk = new ZooKeeper(url, zkSessionTimeout, new Watcher() {
@@ -63,7 +85,8 @@ public enum ZooKeeperUtil {
                 logger.trace("Connecting to ZK.");
             }
         });
-        //Wait till connection is established.
+
+        // 等待连接建立
         while (zk.getState() != ZooKeeper.States.CONNECTED) {
             Thread.sleep(30);
             connectAttempt++;
@@ -87,8 +110,7 @@ public enum ZooKeeperUtil {
             defaultAcl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
             return;
         }
-        // Don't let things happen in a half-baked state, build the new ACL and then set it into
-        // defaultAcl
+        // Don't let things happen in a half-baked state, build the new ACL and then set it into defaultAcl
         ArrayList<ACL> newDefault = new ArrayList<>();
         try {
             JSONArray acls = (JSONArray) ((JSONObject) new JSONParser().parse(jsonAcl)).get("acls");
@@ -165,11 +187,20 @@ public enum ZooKeeperUtil {
         }
     }
 
+    /**
+     *
+     * @param importFile
+     * @param overwrite
+     * @param zk
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws KeeperException
+     */
     public void importData(List<String> importFile, Boolean overwrite, ZooKeeper zk) throws IOException, InterruptedException, KeeperException {
 
         for (String line : importFile) {
             logger.debug("Importing line " + line);
-            // Delete Operation
+            // 删除操作
             if (line.startsWith("-")) {
                 String nodeToDelete = line.substring(1);
                 deleteNodeIfExists(nodeToDelete, zk);
@@ -213,6 +244,17 @@ public enum ZooKeeperUtil {
         return raw.replaceAll("\\\\n", "\n");
     }
 
+    /**
+     * 创建路径和节点
+     *
+     * @param path      节点所在的路径
+     * @param name      节点名
+     * @param data      节点数据
+     * @param force     是否强制创建（存在节点时，先删除节点再创建节点）
+     * @param zk        zk客户端
+     * @throws InterruptedException
+     * @throws KeeperException
+     */
     private void createPathAndNode(String path, String name, byte[] data, boolean force, ZooKeeper zk) throws InterruptedException, KeeperException {
         // 1. Create path nodes if necessary
         StringBuilder currPath = new StringBuilder();
@@ -232,6 +274,16 @@ public enum ZooKeeperUtil {
         createIfDoesntExist(path + '/' + name, data, force, zk);
     }
 
+    /**
+     * 创建一个节点，如果节点不存在
+     *
+     * @param path      节点路径
+     * @param data      节点数据
+     * @param force     是否强制创建（存在节点时，先删除节点再创建节点）
+     * @param zooKeeper zk客户端
+     * @throws InterruptedException
+     * @throws KeeperException
+     */
     private void createIfDoesntExist(String path, byte[] data, boolean force, ZooKeeper zooKeeper) throws InterruptedException, KeeperException {
         try {
             zooKeeper.create(path, data, defaultAcl(), CreateMode.PERSISTENT);
@@ -248,6 +300,16 @@ public enum ZooKeeperUtil {
         }
     }
 
+    /**
+     * 获取指定路径下的目录和节点数据
+     *
+     * @param zk
+     * @param path
+     * @param authRole
+     * @return
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     public ZKNode listNodeEntries(ZooKeeper zk, String path, String authRole) throws KeeperException, InterruptedException {
         List<String> folders = new ArrayList<>();
         List<LeafBean> leaves = new ArrayList<>();
@@ -285,6 +347,16 @@ public enum ZooKeeperUtil {
         return zkNode;
     }
 
+    /**
+     * 获取指定路径下的节点数据
+     *
+     * @param zk
+     * @param path
+     * @param authRole
+     * @return
+     * @throws InterruptedException
+     * @throws KeeperException
+     */
     @Deprecated
     public List<LeafBean> listLeaves(ZooKeeper zk, String path, String authRole) throws InterruptedException, KeeperException {
         List<LeafBean> leaves = new ArrayList<>();
@@ -312,6 +384,15 @@ public enum ZooKeeperUtil {
         return leaves;
     }
 
+    /**
+     * 获取path目录下的子目录名（这里的目录是指，指定的节点下包含多个节点）
+     *
+     * @param zk
+     * @param path
+     * @return
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     @Deprecated
     public List<String> listFolders(ZooKeeper zk, String path) throws KeeperException, InterruptedException {
         List<String> folders = new ArrayList<>();
@@ -333,6 +414,13 @@ public enum ZooKeeperUtil {
         return folders;
     }
 
+    /**
+     * 获取节点路径，/${name}的路径
+     *
+     * @param path
+     * @param name
+     * @return
+     */
     public String getNodePath(String path, String name) {
         return path + ("/".equals(path) ? "" : "/") + name;
 
@@ -340,6 +428,7 @@ public enum ZooKeeperUtil {
 
     public LeafBean getNodeValue(ZooKeeper zk, String path, String childPath, String child, String authRole) {
         //Reason exception is caught here is so that lookup can continue to happen if a particular property is not found at parent level.
+        // 这里捕获异常的原因是，如果在父级没有找到特定的属性，则可以继续执行查找。
         try {
             logger.trace("Lookup: path=" + path + ",childPath=" + childPath + ",child=" + child + ",authRole=" + authRole);
             byte[] dataBytes = zk.getData(childPath, false, new Stat());
@@ -359,6 +448,12 @@ public enum ZooKeeperUtil {
 
     }
 
+    /**
+     * 判断property是否为密码属性
+     *
+     * @param property
+     * @return
+     */
     public Boolean checkIfPwdField(String property) {
         if (property.contains("PWD") || property.contains("pwd") || property.contains("PASSWORD") || property.contains("password") || property.contains("PASSWD") || property.contains("passwd")) {
             return true;
@@ -367,6 +462,16 @@ public enum ZooKeeperUtil {
         }
     }
 
+    /**
+     * 创建指定的节点和节点数据
+     *
+     * @param path      节点目录
+     * @param name      节点名称
+     * @param value     节点值
+     * @param zk
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     public void createNode(String path, String name, String value, ZooKeeper zk) throws KeeperException, InterruptedException {
         String nodePath = path + name;
         logger.debug("Creating node " + nodePath + " with value " + value);
@@ -374,6 +479,16 @@ public enum ZooKeeperUtil {
 
     }
 
+    /**
+     * 创建指定的节点和节点数据
+     *
+     * @param folderPath        节点目录
+     * @param propertyName      节点名称
+     * @param propertyValue     节点值
+     * @param zk
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     public void createFolder(String folderPath, String propertyName, String propertyValue, ZooKeeper zk) throws KeeperException, InterruptedException {
 
         logger.debug("Creating folder " + folderPath + " with property " + propertyName + " and value " + propertyValue);
@@ -382,6 +497,16 @@ public enum ZooKeeperUtil {
 
     }
 
+    /**
+     * 给指定的目录节点设置值
+     *
+     * @param path      节点所在的目录
+     * @param name      节点名
+     * @param value     节点值
+     * @param zk        zk客户端
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     public void setPropertyValue(String path, String name, String value, ZooKeeper zk) throws KeeperException, InterruptedException {
         String nodePath = path + name;
         logger.debug("Setting property " + nodePath + " to " + value);
@@ -389,11 +514,28 @@ public enum ZooKeeperUtil {
 
     }
 
+    /**
+     * 指定的目录节点是否存在
+     *
+     * @param nodeFullPath  节点的目录全路径
+     * @param zk            zk客户端
+     * @return
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     public boolean nodeExists(String nodeFullPath, ZooKeeper zk) throws KeeperException, InterruptedException {
         logger.trace("Checking if exists: " + nodeFullPath);
         return zk.exists(nodeFullPath, false) != null;
     }
 
+    /**
+     * 删除指定的目录节点（注意：递归删除）
+     *
+     * @param folderNames
+     * @param zk
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     public void deleteFolders(List<String> folderNames, ZooKeeper zk) throws KeeperException, InterruptedException {
 
         for (String folderPath : folderNames) {
@@ -402,6 +544,14 @@ public enum ZooKeeperUtil {
 
     }
 
+    /**
+     * 删除指定的目录节点（注意：递归删除）
+     *
+     * @param folderPath
+     * @param zk
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
     private void deleteFolderInternal(String folderPath, ZooKeeper zk) throws KeeperException, InterruptedException {
 
         logger.debug("Deleting folder " + folderPath);
@@ -411,18 +561,41 @@ public enum ZooKeeperUtil {
         zk.delete(folderPath, -1);
     }
 
+    /**
+     * 删除指定的zk节点
+     *
+     * @param leafNames     节点名称
+     * @param zk            zk客户端
+     * @throws InterruptedException
+     * @throws KeeperException
+     */
     public void deleteLeaves(List<String> leafNames, ZooKeeper zk) throws InterruptedException, KeeperException {
 
         for (String leafPath : leafNames) {
             logger.debug("Deleting leaf " + leafPath);
+            // 删除指定版本的节点，-1表示不指定版本
             zk.delete(leafPath, -1);
         }
     }
 
+    /**
+     * 删除指定的zk节点
+     *
+     * @param path
+     * @param zk
+     * @throws InterruptedException
+     * @throws KeeperException
+     */
     private void deleteNodeIfExists(String path, ZooKeeper zk) throws InterruptedException, KeeperException {
         zk.delete(path, -1);
     }
 
+    /**
+     * 关闭zk客户端
+     *
+     * @param zk
+     * @throws InterruptedException
+     */
     public void closeZooKeeper(ZooKeeper zk) throws InterruptedException {
         logger.trace("Closing ZooKeeper");
         if (zk != null) {

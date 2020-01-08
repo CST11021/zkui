@@ -24,9 +24,13 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 基于LDAP（轻量目录访问协议）协议的登录认证
+ */
 public class LdapAuth {
 
     DirContext ctx = null;
+
     private final static org.slf4j.Logger logger = LoggerFactory.getLogger(LdapAuth.class);
 
     public boolean authenticateUser(String ldapUrl, String username, String password, String domains) {
@@ -39,6 +43,7 @@ public class LdapAuth {
             env.put(Context.SECURITY_AUTHENTICATION, "simple");
             env.put(Context.SECURITY_PRINCIPAL, domain + "\\" + username);
             env.put(Context.SECURITY_CREDENTIALS, password);
+
             try {
                 ctx = new InitialDirContext(env);
                 return true;

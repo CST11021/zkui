@@ -62,20 +62,32 @@ public class Login extends HttpServlet {
 
     }
 
+    /**
+     * 用户登录
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         logger.debug("Login Post Action!");
         try {
             Properties globalProps = (Properties) getServletContext().getAttribute("globalProps");
             Map<String, Object> templateParam = new HashMap<>();
+            // 获取当前的Session，如果没有Session则创建一个新的Session
             HttpSession session = request.getSession(true);
+            // 设置Session超时时间，如果指定的时间内，没有客户端请求，则Session失效
             session.setMaxInactiveInterval(Integer.valueOf(globalProps.getProperty("sessionTimeout")));
+
             //TODO: Implement custom authentication logic if required.
             String username = request.getParameter("username");
             String password = request.getParameter("password");
             String role = null;
             Boolean authenticated = false;
-            //if ldap is provided then it overrides roleset.
+
+            //如果提供ldap，则它将覆盖roleset
             if (globalProps.getProperty("ldapAuth").equals("true")) {
                 authenticated = new LdapAuth().authenticateUser(globalProps.getProperty("ldapUrl"), username, password, globalProps.getProperty("ldapDomain"));
                 if (authenticated) {
@@ -104,6 +116,8 @@ public class Login extends HttpServlet {
                     }
                 }
             }
+
+            // 通过身份验证直接访问/home，否则提示登录失败
             if (authenticated) {
                 logger.info("Login successful: " + username);
                 session.setAttribute("authName", username);
