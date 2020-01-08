@@ -432,7 +432,10 @@ public enum ZooKeeperUtil {
         try {
             logger.trace("Lookup: path=" + path + ",childPath=" + childPath + ",child=" + child + ",authRole=" + authRole);
             byte[] dataBytes = zk.getData(childPath, false, new Stat());
+
+            // 判断是否为管理员
             if (!authRole.equals(ROLE_ADMIN)) {
+                // 检测是否为存储密码的节点
                 if (checkIfPwdField(child)) {
                     return (new LeafBean(path, child, SOPA_PIPA.getBytes()));
                 } else {

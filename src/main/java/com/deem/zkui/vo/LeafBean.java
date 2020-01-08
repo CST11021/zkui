@@ -22,12 +22,28 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 封装叶子节点的路径、节点名及数据
+ */
 public class LeafBean implements Comparable<LeafBean> {
 
     private final static Logger logger = LoggerFactory.getLogger(LeafBean.class);
+
+    /**
+     * 节点所在的路径
+     */
     private String path;
+
+    /**
+     * 节点名称
+     */
     private String name;
+
+    /**
+     * 节点数据
+     */
     private byte[] value;
+
     private String strValue;
 
     public LeafBean(String path, String name, byte[] value) {

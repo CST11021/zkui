@@ -22,7 +22,14 @@ import java.util.List;
 
 public class ZKNode {
 
+    /**
+     * 节点列表
+     */
     List<String> nodeLst;
+
+    /**
+     * 叶子节点列表
+     */
     List<LeafBean> leafBeanLSt;
 
     public ZKNode() {
