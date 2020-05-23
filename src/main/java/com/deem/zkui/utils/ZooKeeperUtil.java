@@ -319,11 +319,27 @@ public enum ZooKeeperUtil {
             for (String child : children) {
                 if (!child.equals(ZK_SYSTEM_NODE)) {
 
-                    List<String> subChildren = zk.getChildren(path + ("/".equals(path) ? "" : "/") + child, false);
+                    List<String> subChildren = null;
+                    String newPath = path + ("/".equals(path) ? "" : "/") + child;
+                    try {
+                        subChildren = zk.getChildren(newPath, false);
+                    } catch (KeeperException e) {
+                        if (KeeperException.Code.NOAUTH.equals(e.code())) {
+                            logger.warn("没有权限获取节点，节点路径 = {}", newPath);
+                            leaves.add(new LeafBean(path, child + "(无权限查看)", null));
+                            continue;
+                        } else {
+                            throw e;
+                        }
+                    }
+
                     boolean isFolder = subChildren != null && !subChildren.isEmpty();
+                    // 添加非叶子节点
                     if (isFolder) {
                         folders.add(child);
-                    } else {
+                    }
+                    // 添加叶子节点
+                    else {
                         String childPath = getNodePath(path, child);
                         leaves.add(this.getNodeValue(zk, path, childPath, child, authRole));
                     }
@@ -426,6 +442,16 @@ public enum ZooKeeperUtil {
 
     }
 
+    /**
+     * 获取叶子节点信息
+     *
+     * @param zk
+     * @param path          父节点路径
+     * @param childPath     子节点路径
+     * @param child         子节点名称
+     * @param authRole      当前用户角色
+     * @return
+     */
     public LeafBean getNodeValue(ZooKeeper zk, String path, String childPath, String child, String authRole) {
         //Reason exception is caught here is so that lookup can continue to happen if a particular property is not found at parent level.
         // 这里捕获异常的原因是，如果在父级没有找到特定的属性，则可以继续执行查找。
